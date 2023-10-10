@@ -8,6 +8,7 @@ import java.util.Scanner;
 import javax.naming.NameNotFoundException;
 
 import java.util.HashMap;
+import java.util.Set;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -23,6 +24,10 @@ class RuleSet {
 		return rules.size();
 	}
 
+	public ArrayList<Variable> getRuleBody(Variable k) {
+		return rules.get(k);
+	}
+
 	private HashMap<Variable, ArrayList<Variable>> rules = new HashMap<Variable, ArrayList<Variable>>(); //deterministic for now
 }
 
@@ -31,6 +36,7 @@ class RuleSet {
 public class LSystem {
 	public static void main(String[] args) throws Exception {
 		LSystem test = new LSystem(new File("C:\\Users\\abdulg\\Desktop\\Desktop\\Java\\LSystems\\Example LSystems\\koch.L"));
+		System.out.println(test.goFromAxioms("curve", 2));
 	}
 
 	public LSystem(Scanner s) throws IllegalArgumentException, NameNotFoundException {
@@ -141,6 +147,30 @@ public class LSystem {
 	}
 	public LSystem(File f) throws FileNotFoundException, NameNotFoundException {
 		this(new Scanner(f).useDelimiter("\n"));
+	}
+	public Set<String> getAxiomNames() {
+		return axioms.keySet();
+	}
+	public String goFromAxioms(String axiomName, int level) throws NameNotFoundException {
+		ArrayList<Variable> current = axioms.get(axiomName);
+		if (current == null) throw new NameNotFoundException("No axiom with name '" + axiomName + "'");
+		return goFromAxioms(current, level);
+	}
+
+	public String goFromAxioms(ArrayList<Variable> axiom, int level) {
+		ArrayList<Variable> current = new ArrayList<Variable>(axiom);
+		for (int i = 0; i < level; ++i) {
+			ArrayList<Variable> next = new ArrayList<Variable>();
+			for (Variable v : current) {
+				ArrayList<Variable> replacement = rules.getRuleBody(v);
+				if (replacement == null) next.add(v); // it's a constant if no rules defined
+				else next.addAll(replacement);
+			}
+			current = next;
+		}
+		String ret = "";
+		for (Variable v: current) ret += v.toString();
+		return ret;
 	}
 
 	private Variable getVariable(String name) throws NameNotFoundException {
