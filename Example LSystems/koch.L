@@ -1,9 +1,9 @@
 This file defines the koch curve and triangle!
 
 variables:
-linear F //Go forwards
-linear + //Rotate left 45 degrees
-linear - //Rotate right 45 degrees
+linear F translation 0 1 //Go 'up'
+linear + rotation -1.0471976 //Rotate left 60 degrees
+linear - rotation 1.0471976 //Rotate right 60 degrees
 
 rules:
 //line becomes a spike of four lines
@@ -11,5 +11,4 @@ F -> F + F - - F + F
 
 axioms:
 curve F
-square F + + F + + F + + F
-//triangle will require a 60 degree rotation
+weird F + + F + + F + + F

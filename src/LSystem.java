@@ -1,6 +1,3 @@
-package LSystems;
-
-//import org.jblas.DoubleMatrix;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
@@ -10,13 +7,13 @@ import javax.naming.NameNotFoundException;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 
 class RuleSet {
 	public RuleSet() {}
 
-	public Boolean addRule(Variable lhs, ArrayList<Variable> rhs) {
+	public boolean addRule(Variable lhs, ArrayList<Variable> rhs) {
 		return (rules.putIfAbsent(lhs, rhs) == null);
 	}
 
@@ -31,17 +28,15 @@ class RuleSet {
 	private HashMap<Variable, ArrayList<Variable>> rules = new HashMap<Variable, ArrayList<Variable>>(); //deterministic for now
 }
 
-//todo use regexes here
-
 public class LSystem {
 	public static void main(String[] args) throws Exception {
-		LSystem test = new LSystem(new File("C:\\Users\\abdulg\\Desktop\\Desktop\\Java\\LSystems\\Example LSystems\\koch.L"));
+		LSystem test = new LSystem(new File("Example LSystems\\koch.L"));
 		System.out.println(test.goFromAxioms("curve", 2));
 	}
 
 	public LSystem(Scanner s) throws IllegalArgumentException, NameNotFoundException {
 		//look for variable declarations
-		Boolean variablesLineFound = false;
+		boolean variablesLineFound = false;
 		while (s.hasNextLine()) {
 			String line = s.nextLine().trim();
 			if (line.length() == 0) continue;
@@ -54,39 +49,51 @@ public class LSystem {
 			throw new IllegalArgumentException("File should contain 'variables:' before some variable definitions");
 		}
 
-		//read variable definitions: type token comment
-		Boolean rulesLineFound = false;
+		//read variable definitions: type token  //comment
+		Pattern allowedTypes = Pattern.compile("linear");
+		boolean rulesLineFound = false;
 		while (s.hasNextLine()) {
-			String line = s.nextLine().split("//")[0].trim();
-			if (line.length() == 0) continue;
-			else if (line.equals("rules:")) {
+			if (s.findInLine("\\h*rules:") != null) { //todo compile this upfront?
 				rulesLineFound = true;
+				s.nextLine();
 				break;
 			}
+			String typeStr = s.findInLine(allowedTypes);
+			if (typeStr == null) {
+				String line = s.nextLine();
+				if (line.length() == 0 || line.startsWith("//")) continue;
+				throw new IllegalArgumentException("Line '" + line + "' does not seem to start with a known type");
+			}
+			System.out.println("type: " + typeStr);
 
-			String[] split = line.split(" ");
-			if (split.length < 2) {
-				throw new IllegalArgumentException("File should define at least one variable like 'type token'");
+			String symbol = s.next();
+			if (symbol == null) {
+				throw new IllegalArgumentException("Malformed input before '" + s.nextLine() + "'");
 			}
 
-			String type = split[0]; //ignored for now
-			String token = split[1];
-			if (variables.putIfAbsent(token, new LinearVariable(token)) != null) {
-				throw new IllegalArgumentException("The variable '" + token + "' was redefined");
+			switch (typeStr) {
+				case "linear":
+					if (variables.putIfAbsent(symbol, new LinearVariable(symbol, s)) != null) {
+						throw new IllegalArgumentException("The variable '" + symbol + "' was redefined");
+					}
+				break;
+				default:
+					System.out.println(typeStr);
+					System.out.println(typeStr.equals("linear"));
+					throw new AssertionError();
 			}
 		}
 		if (variables.size() == 0 || !rulesLineFound) {
 			throw new IllegalArgumentException("We should have at least one variable definition followed by 'rules:'");
 		}
 
-		
 		//build variable regex, h is horizontal whitespace
 		ArrayList<String> quotedStrings = new ArrayList<String>();
 		for (String key : variables.keySet()) quotedStrings.add(Pattern.quote(key));
 		Pattern knownVars = Pattern.compile("\\h*(" + String.join(")|(", quotedStrings) + ")\\h*");
 
 		//read rules: symbol -> list of symbols //comment
-		Boolean axiomsLineFound = false;
+		boolean axiomsLineFound = false;
 		while (s.hasNextLine()) { //parse a rule
 			//check if we just met the 'axioms:' line
 			if (s.findInLine("\\h*axioms:") != null) {
@@ -142,11 +149,11 @@ public class LSystem {
 		}
 	}
 	public LSystem(String s) throws FileNotFoundException, NameNotFoundException {
-		this(new Scanner(s).useDelimiter("\n"));
+		this(new Scanner(s));
 
 	}
 	public LSystem(File f) throws FileNotFoundException, NameNotFoundException {
-		this(new Scanner(f).useDelimiter("\n"));
+		this(new Scanner(f));
 	}
 	public Set<String> getAxiomNames() {
 		return axioms.keySet();
