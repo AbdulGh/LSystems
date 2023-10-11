@@ -64,7 +64,6 @@ public class LSystem {
 				if (line.length() == 0 || line.startsWith("//")) continue;
 				throw new IllegalArgumentException("Line '" + line + "' does not seem to start with a known type");
 			}
-			System.out.println("type: " + typeStr);
 
 			String symbol = s.next();
 			if (symbol == null) {
@@ -78,8 +77,6 @@ public class LSystem {
 					}
 				break;
 				default:
-					System.out.println(typeStr);
-					System.out.println(typeStr.equals("linear"));
 					throw new AssertionError();
 			}
 		}
