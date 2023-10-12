@@ -3,6 +3,7 @@ import java.io.FileNotFoundException;
 import java.util.Scanner;
 
 import javax.naming.NameNotFoundException;
+import javax.swing.JFrame;
 
 import org.jblas.DoubleMatrix;
 
@@ -32,8 +33,15 @@ class RuleSet {
 public class LSystem {
 	public static void main(String[] args) throws Exception {
 		LSystem test = new LSystem(new File("Example LSystems\\koch.L"));
-		ArrayList<Variable> vars = test.goFromAxioms("curve", 2);
-		Fractal f = new Fractal(vars);
+		ArrayList<Variable> vars = test.goFromAxioms("curve", 5);
+		Fractal koch = new Fractal(vars);
+
+		JFrame frame = new JFrame();
+		frame.setTitle ("Koch Curve");
+		frame.setResizable (true);
+		frame.setSize (500, 1000);
+		frame.getContentPane().add(koch);
+    	frame.setVisible (true);
 	}
 
 	public LSystem(Scanner s) throws IllegalArgumentException, NameNotFoundException {
@@ -79,7 +87,7 @@ public class LSystem {
 					}
 				break;
 				default:
-					throw new AssertionError();
+					throw new AssertionError("weird type");
 			}
 		}
 		if (variables.size() == 0 || !rulesLineFound) {

@@ -20,7 +20,6 @@ abstract class Variable {
 	public String toString() {
 		return symbol;
 	}
-//	public abstract DoubleMatrix transform(DoubleMatrix in);
 
 	private String symbol;
 	private Type type;

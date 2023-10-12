@@ -17,7 +17,6 @@ public class Fractal extends JPanel {
 	}
 	
 	public void apply(Variable var) { //todo see if this can be done in place - might be faster to pad w/ zeros
-		
 		fillament = DoubleMatrix.concatHorizontally(
 			var.transform(fillament),
 			origin.dup() //todo check if this dup is needed (I need to learn Java)
@@ -35,8 +34,7 @@ public class Fractal extends JPanel {
 
 		double[][] points = fillament.transpose().toArray2();
 		for (int i = 0; i < points.length - 1; ++i) {
-			if (points.length != 2) throw new AssertionError();
-			g2d.drawLine((int)points[i][0], (int)points[i][1], (int)points[i+1][0], (int)points[i+1][1]);
+			g2d.drawLine(20 * (int)points[i][0] + 20, 20 * (int)points[i][1] + 20, 20 * (int)points[i+1][0] + 20, 20 * (int)points[i+1][1] + 20);
 		}
 	}
 
