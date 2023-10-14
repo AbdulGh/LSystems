@@ -18,8 +18,8 @@ which serve as possible starting points for your fractal.
 
 variables:
 linear F translation 0 1 //Go 'up'
-linear + rotation -2.09439510239 //Rotate left 60 degrees
-linear - rotation 2.09439510239 //Rotate right 60 degrees
+linear + rotation -1.0471976 //Rotate left 60 degrees
+linear - rotation 1.0471976 //Rotate right 60 degrees
 
 rules:
 //line becomes a spike of four lines
