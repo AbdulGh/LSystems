@@ -17,7 +17,7 @@ name space separated symbols
 which serve as possible starting points for your fractal.
 
 variables:
-linear F translation 0 1 //Go 'up'
+linear F translation 1 0 //Go 'up'
 linear + rotation -1.0471976 //Rotate left 60 degrees
 linear - rotation 1.0471976 //Rotate right 60 degrees
 
@@ -27,4 +27,5 @@ F -> F + F - - F + F
 
 axioms:
 curve F
-weird F + + F + + F + + F
+snowflake F - - F - - F
+mitsubishi F + + F + + F
