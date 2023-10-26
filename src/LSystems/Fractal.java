@@ -32,6 +32,10 @@ public class Fractal extends JPanel {
 		for (Variable v : vars) apply(v);
 	}
 
+	public DoubleMatrix getFillaments() {
+		return fillament;
+	}
+
 	@Override
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);

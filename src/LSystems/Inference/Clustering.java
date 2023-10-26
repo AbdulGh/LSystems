@@ -3,11 +3,13 @@ package LSystems.Inference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Arrays;
-
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.function.Function;
 
 public class Clustering {
 
-	/* maybe later...
+	/* KDE maybe later...
 	
 	performs 1d clustering/segmentation using KDE
     public Clustering(ArrayList<Double> input, double sigma, int locality) {
@@ -29,21 +31,21 @@ public class Clustering {
 		this(input, 1, 5);
 	}*/
 
-	public Clustering(ArrayList<Double> _input, double eps) {
-		ArrayList<Double> input = new ArrayList<Double>(_input);
+	public Clustering(double[] _input, double eps) {
+		double[] input = _input.clone();
 
-		ArrayList<Integer> ordering = new ArrayList<Integer>(input.size());
-		for (int i = 0; i < input.size(); ++i) ordering.add(i);
-		ordering.sort((i, j) -> Double.compare(input.get(i), input.get(j)));
+		Integer[] ordering = new Integer[input.length];
+		for (Integer i = 0; i < input.length; ++i) ordering[i] = i;
+		Arrays.sort(ordering, (i, j) -> Double.compare(input[i], input[j]));
 
-		Collections.sort(input);
+		Arrays.sort(input);
 
 		ArrayList<Integer> boundaries = new ArrayList<Integer>();
 		boundaries.add(-1);
-		for (int i = 0; i < input.size() - 1; ++i) {
-			if (Math.abs(input.get(i+1) - input.get(i)) > eps) boundaries.add(i);
+		for (int i = 0; i < input.length - 1; ++i) {
+			if (Math.abs(input[i+1] - input[i]) > eps) boundaries.add(i);
 		}
-		boundaries.add(input.size() - 1);
+		boundaries.add(input.length - 1);
 
 		//find some means
 		int leftVal = 0;
@@ -51,18 +53,18 @@ public class Clustering {
 			leftVal = boundaries.get(right - 1) + 1;
 			int rightVal = boundaries.get(right);
 			double acc = 0;
-			for (int j = leftVal; j <= rightVal; ++j) acc += input.get(j);
+			for (int j = leftVal; j <= rightVal; ++j) acc += input[j];
 			acc /= (rightVal - leftVal + 1);
 			classes.add(acc);
-			for (int j = leftVal; j <= rightVal; ++j) input.set(j, acc);
+			for (int j = leftVal; j <= rightVal; ++j) input[j] = acc;
 		}
-		discretisedInput = new ArrayList<Double>(input.size());
-		for (int i = 0; i < input.size(); ++i) {
-			discretisedInput.add(input.get(ordering.get(i)));
+		discretisedInput = new ArrayList<Double>(input.length);
+		for (int i = 0; i < input.length; ++i) {
+			discretisedInput.add(input[ordering[i]]);
 		}
 	}
 
-	public Clustering(ArrayList<Double> input) { 
+	public Clustering(double[] input) { 
 		this(input, 0.1);
 	}
 
@@ -73,6 +75,20 @@ public class Clustering {
 	public ArrayList<Double> getDiscretisedInput() {
 		return discretisedInput;
 	}
+
+	public HashMap<Double, String> nameBins(String prefix) {
+		HashMap<Double, String> names = new HashMap<>();
+
+		for (int i = 0; i < classes.size(); ++i) {
+			names.put(classes.get(i), prefix + Integer.toString(i, 36));
+		}
+
+		return names;
+	}
+	public HashMap<Double, String> nameBins() {
+		return this.nameBins("");
+	}
+
 
 	private ArrayList<Double> classes = new ArrayList<Double>();
 	private ArrayList<Double> discretisedInput;

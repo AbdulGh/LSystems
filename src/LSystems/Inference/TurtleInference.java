@@ -1,6 +1,11 @@
 package LSystems.Inference;
 
+import LSystems.Fractal;
+
 import org.jblas.DoubleMatrix;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class TurtleInference {
 	TurtleInference(DoubleMatrix input) { 
@@ -21,6 +26,23 @@ public class TurtleInference {
 			rotations[i] = vectorAngle(x1, y1, x2, y2);
 		}
 
+		Clustering transClustering = new Clustering(translations, 0.001);
+		ArrayList<Double> transDisc = transClustering.getDiscretisedInput();
+		HashMap<Double, String> transNames = transClustering.nameBins("#");
+
+		Clustering rotClustering = new Clustering(rotations, 0.001);
+		ArrayList<Double> rotDisc = rotClustering.getDiscretisedInput();
+		HashMap<Double, String> rotNames = rotClustering.nameBins("$");
+
+		String wow = transNames.get(transDisc.get(0));
+		for (int i = 0; i < rotDisc.size(); ++i) {
+			wow += " " + rotNames.get(rotDisc.get(i)) + " " + transNames.get(transDisc.get(i + 1));
+		}
+		System.out.println(wow);
+	}
+
+	public TurtleInference(Fractal f) {
+		this(f.getFillaments());
 	}
 
 	private static double vectorAngle(double x1, double y1, double x2, double y2) {

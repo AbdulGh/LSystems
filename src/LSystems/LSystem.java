@@ -6,6 +6,8 @@ import java.util.Scanner;
 import javax.naming.NameNotFoundException;
 import javax.swing.JFrame;
 
+import LSystems.Inference.TurtleInference;
+
 import java.util.HashMap;
 import java.util.Set;
 import java.util.ArrayList;
@@ -31,8 +33,8 @@ class RuleSet {
 
 public class LSystem {
 	public static void main(String[] args) throws Exception {
-		LSystem test = new LSystem(new File("Example LSystems\\spacefill.L"));
-		ArrayList<Variable> vars = test.goFromAxioms("start", 2);
+		LSystem test = new LSystem(new File("Example LSystems\\koch.L"));
+		ArrayList<Variable> vars = test.goFromAxioms("curve", 1);
 		System.out.println(vars);
 		Fractal koch = new Fractal(vars);
 
@@ -43,6 +45,8 @@ public class LSystem {
 		frame.getContentPane().add(koch);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     	frame.setVisible(true);
+
+		TurtleInference t = new TurtleInference(koch);
 	}
 
 	public LSystem(Scanner s) throws IllegalArgumentException, NameNotFoundException {
