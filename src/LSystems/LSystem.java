@@ -34,7 +34,7 @@ class RuleSet {
 public class LSystem {
 	public static void main(String[] args) throws Exception {
 		LSystem test = new LSystem(new File("Example LSystems\\koch.L"));
-		ArrayList<Variable> vars = test.goFromAxioms("curve", 1);
+		ArrayList<Variable> vars = test.goFromAxioms("curve", 2);
 		System.out.println(vars);
 		Fractal koch = new Fractal(vars);
 

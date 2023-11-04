@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 
 public class Clustering {
 
@@ -34,12 +35,17 @@ public class Clustering {
 	public Clustering(double[] _input, double eps) {
 		double[] input = _input.clone();
 
+		//ordering gives you, in the ith coordinate, the original index of the ith element in the sorted array
+		//postitionMapping gives you, in the ith coordinate, the position that the ith element lands
 		Integer[] ordering = new Integer[input.length];
-		for (Integer i = 0; i < input.length; ++i) ordering[i] = i;
-		Arrays.sort(ordering, (i, j) -> Double.compare(input[i], input[j]));
+		for (int i = 0; i < input.length; ++i) ordering[i] = i;
+		Arrays.sort(ordering, Comparator.comparingDouble(i -> input[i]));
+		int[] positionMapping = new int[input.length];
+		for (int i = 0; i < input.length; i++) {
+			positionMapping[ordering[i]] = i;
+		}
 
 		Arrays.sort(input);
-
 		ArrayList<Integer> boundaries = new ArrayList<Integer>();
 		boundaries.add(-1);
 		for (int i = 0; i < input.length - 1; ++i) {
@@ -58,9 +64,10 @@ public class Clustering {
 			classes.add(acc);
 			for (int j = leftVal; j <= rightVal; ++j) input[j] = acc;
 		}
+
 		discretisedInput = new ArrayList<Double>(input.length);
 		for (int i = 0; i < input.length; ++i) {
-			discretisedInput.add(input[ordering[i]]);
+			discretisedInput.add(input[positionMapping[i]]);
 		}
 	}
 
@@ -78,17 +85,14 @@ public class Clustering {
 
 	public HashMap<Double, String> nameBins(String prefix) {
 		HashMap<Double, String> names = new HashMap<>();
-
 		for (int i = 0; i < classes.size(); ++i) {
 			names.put(classes.get(i), prefix + Integer.toString(i, 36));
 		}
-
 		return names;
 	}
 	public HashMap<Double, String> nameBins() {
 		return this.nameBins("");
 	}
-
 
 	private ArrayList<Double> classes = new ArrayList<Double>();
 	private ArrayList<Double> discretisedInput;
@@ -96,23 +100,12 @@ public class Clustering {
 
 class test { //todo learn JUnit
 	public static void main(String[] args) {
-		/*Clustering test = new Clustering(new ArrayList<Double>(Arrays.asList(0.1, 0.11, 0.12, 0.23, 0.3)));
+		Clustering test = new Clustering(new double[]{0.1, 0.11, 0.12, 0.23, 0.3});
 		System.out.println(test.getClasses());
 		System.out.println(test.getDiscretisedInput());
-		*/
-		/*
-		Clustering test2 = new Clustering(new ArrayList<Double>(Arrays.asList(1.0, 2.0, 1.01, 3.0, 5.0, 2.05, 4.97)));
+
+		Clustering test2 = new Clustering(new double[]{1.0, 2.0, 1.01, 3.0, 5.0, 2.05, 4.97});
 		System.out.println(test2.getClasses());
 		System.out.println(test2.getDiscretisedInput());
-		*/
-
-		Clustering test2 = new Clustering(new ArrayList<Double>(Arrays.asList(1.0, 5.01, 2.0, 3.0, 4.99)));
-		System.out.println(test2.getClasses());
-		System.out.println(test2.getDiscretisedInput());
-
-
-		//Clustering test3 = new Clustering(new ArrayList<Double>(Arrays.asList(5.0, 4.0, 3.0, 2.0, 1.0)));
-		//System.out.println(test3.getClasses());
-		//System.out.println(test3.getDiscretisedInput());
 	}
 }
