@@ -1,0 +1,11 @@
+(lang dune 3.12)
+
+(name parser)
+
+(authors "Abdul Ghani")
+
+(package
+ (name parser)
+ (synopsis "Parses a string against some specified lsystem")
+ (depends ocaml dune ounit2)
+ )

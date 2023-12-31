@@ -1,0 +1,5 @@
+(test
+ (name test_fsm)
+ (libraries fsm ounit2)
+ (package parser) 
+)
