@@ -55,10 +55,10 @@ let chain_tfun (start: state) (input: string) (index: int): tfun_t =
         else None 
 
 let chain_fsm (startstate: state) ((c, s): rule) (firstchar: int): fsm =
-    let numstates = (strlen s) + 1 - firstchar in {
+    let numstates = (strlen s) - firstchar + 1 in {
         startstate = startstate;
         numstates = numstates;
-        accept = (fun s2 -> if s2 = (numstates - 1) then Some c else None);
+        accept = (fun s2 -> if s2 = startstate + numstates - 1 then Some c else None);
         tfun = chain_tfun startstate s firstchar
     }
 
@@ -102,6 +102,13 @@ let failurefun (mach: fsm) (prefix: string) (strs: string list): state =
     let (beststr, overlap) = failurefun_prefix prefix strs in snd (follow_str mach (strsub beststr 0 overlap))
 
 (* step 1: just throw together a fsm *)
+(* todo find a better way of doing this, or check what it compiles to *)
+let with_start_state (input: fsm) (ss:state) :fsm = {
+    startstate = ss;
+    numstates = input.numstates;
+    accept = input.accept;
+    tfun = input.tfun
+}
 
 let rec basicfsm_inner (strs: rule list): fsm
     = match strs with
@@ -110,16 +117,22 @@ let rec basicfsm_inner (strs: rule list): fsm
         let nextfsm = basicfsm_inner t in
             let (laststate, firstchar) = follow_str nextfsm cstr in 
                 if firstchar = (strlen cstr) 
-                then {(*the case where we dont need to add a chain*)
+                then { (*the case where we dont need to add a chain*)
                     startstate = 0;
                     numstates = nextfsm.numstates;
                     accept = (fun s -> if s = laststate then Some clhc else (nextfsm.accept s));
                     tfun = nextfsm.tfun
-                } else let chain = chain_fsm nextfsm.numstates rule firstchar in {
+                } 
+                else let chain = chain_fsm nextfsm.numstates rule (firstchar + 1) in {
                     startstate = 0;
-                    numstates = nextfsm.numstates + (strlen cstr) - firstchar + 1; 
+                    numstates = nextfsm.numstates + (strlen cstr) - firstchar; 
                     accept = (fun s -> if s >= nextfsm.numstates then chain.accept s else nextfsm.accept s); (*todo check overlapping*)
-                    tfun = (fun s c -> if s >= nextfsm.numstates then chain.tfun s c else nextfsm.tfun s c)
+                    tfun = (
+                        fun s c -> match s, c with
+                        | s2, c2 when s2 = laststate && c2 = cstr.[firstchar] -> Some chain.startstate; (* = nextfsm.numstates *)
+                        | s2, c2 when s >= nextfsm.numstates -> chain.tfun s2 c2;
+                        | s2, c2 -> nextfsm.tfun s2 c2
+                    )
                 }
 
 let basicfsm (strs: rule list): fsm = 
@@ -138,9 +151,6 @@ let rec combine_fns (fns: ('a -> 'b -> 'c option) list): 'a -> 'b -> 'c option =
         | Some thing -> Some thing;
         | None -> (combine_fns t) x y
     )
-
-let allprefixes (str: string): string list =
-    List.init (strlen str) (strsub str 0)
 
 let make_fsm_add_chrs (trie: fsm) (str: string) (strs: string list) (cstate: state) (index: int): tfun_t =
     if index >= strlen str then (fun _ _ -> None)

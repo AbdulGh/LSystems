@@ -2,7 +2,8 @@ open OUnit2
 open Fsm
 
 let bfut1 = basicfsm [('a', "aaaa"); ('b', "aa")]
-let bfut2 = basicfsm [('a', "aa"); ('b', "ab")]
+let bfut2 = basicfsm [('a', "aa"); ('b', "aaaa")]
+let bfut3 = basicfsm [('a', "aa"); ('b', "ab")]
 
 let charopt_to_string (input: char option): string = match input with
     | Some c -> Printf.sprintf "Some %c" c;
@@ -13,9 +14,19 @@ let ae_co =
 
 let basicfsm_tests = "basicfsm tests" >::: [
     "state reuse" >:: (fun _ -> assert_equal bfut1.numstates 5);
-    "bfut1 accepts what it should" >:: (
-        fun _ -> ((assert_equal (fsm_accepts bfut1 "aa") (Some 'b')); assert_equal (fsm_accepts bfut1 "aaaa") (Some 'a'))
-    ); 
+    "state reuse 2" >:: (fun _ -> assert_equal bfut2.numstates 5);
+    "bfut1 accepts aa" >:: (
+        fun _ -> (assert_equal (fsm_accepts bfut1 "aa") (Some 'b'))
+    );
+    "bfut1 accepts aaaa" >:: (
+        fun _ -> (assert_equal (fsm_accepts bfut1 "aaaa") (Some 'a'))
+    );
+    "bfut2 accepts aa" >:: (
+        fun _ -> (assert_equal (fsm_accepts bfut2 "aa") (Some 'a'))
+    );
+    "bfut2 accepts aaaa" >:: (
+        fun _ -> (assert_equal (fsm_accepts bfut2 "aaaa") (Some 'b'))
+    );
     "bfut1 rejects some things that it should" >:: (
         fun _ -> (
             (ae_co (fsm_accepts bfut1 "aaa") None);
@@ -25,7 +36,30 @@ let basicfsm_tests = "basicfsm tests" >::: [
             (ae_co (fsm_accepts bfut1 "") None);
             (ae_co (fsm_accepts bfut1 "hello, world") None);
         )
-    )
+    );
+    "bfut2 rejects some things that it should" >:: (
+        fun _ -> (
+            (ae_co (fsm_accepts bfut2 "aaa") None);
+            (ae_co (fsm_accepts bfut2 "aaaaa") None);
+            (ae_co (fsm_accepts bfut2 "a") None);
+            (ae_co (fsm_accepts bfut2 "b") None);
+            (ae_co (fsm_accepts bfut2 "") None);
+            (ae_co (fsm_accepts bfut2 "hello, world") None);
+        )
+    );
+    "state reuse 3" >:: (fun _ -> assert_equal bfut3.numstates 4);
+    "bfut3 accepts aa" >:: (fun _ -> assert_equal (fsm_accepts bfut3 "aa") (Some 'a'));  
+    "bfut3 rejects some things that it should" >:: (
+        fun _ -> (
+            (ae_co (fsm_accepts bfut3 "aaa") None);
+            (ae_co (fsm_accepts bfut3 "aaaaa") None);
+            (ae_co (fsm_accepts bfut3 "a") None);
+            (ae_co (fsm_accepts bfut3 "b") None);
+            (ae_co (fsm_accepts bfut3 "") None);
+            (ae_co (fsm_accepts bfut3 "hello, world") None);
+        )
+    );
+    "bfut3 accepts ab" >:: (fun _ -> assert_equal (fsm_accepts bfut3 "ab") (Some 'b'))  
 ]
 
 let _ = run_test_tt_main basicfsm_tests
