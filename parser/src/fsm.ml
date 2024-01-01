@@ -62,13 +62,19 @@ let chain_fsm (startstate: state) ((c, s): rule) (firstchar: int): fsm =
         tfun = chain_tfun startstate s firstchar
     }
 
-let rec longest_overlap_inner (suf: string) (pref: string) (check: int): int = 
-    if strsub pref 0 check <> strsub suf (strlen suf - check) check
-        then check - 1
-        else longest_overlap_inner suf pref (check + 1)
 
+let rec longest_overlap_inner (suf: string) (pref: string) (check: int) (acc: int): int
+    = if check > min (strlen suf) (strlen pref)
+        then acc
+        else longest_overlap_inner suf pref (check + 1) ( (* todo check if this counts as tail recursive *)
+            if strsub pref 0 check = strsub suf (strlen suf - check) check
+                then check
+                else acc
+        )
+
+    
 let longest_overlap (suf: string) (pref: string): int = 
-    longest_overlap_inner suf pref 1
+    longest_overlap_inner suf pref 1 0
 
 (*
     returns the last state that the string goes to,
