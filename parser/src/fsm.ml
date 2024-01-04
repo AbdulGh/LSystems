@@ -1,26 +1,6 @@
 (* utils *)
-(* todo is append faster than prepend?
-let rec range (start: int) (stop: int): int list =
-    if start >= stop then stop :: []
-    else start :: range (start + 1) stop
-*)
-
-let rec rangerev (start: int) (stop: int): int list = 
-    if start <= stop then stop :: []
-    else start :: (rangerev (start - 1) stop)
-
-let rec find_index_inner (pred: 'a -> bool) (l: 'a list) (index: int): int option =
-    match l with
-    | [] -> None
-    | h :: t -> if pred h 
-        then Some index 
-        else find_index_inner pred t (index + 1)
 
 let appendchar (s: string) (c: char): string = s ^ (String.make 1 c)
-
-(*todo find this in the stl*)
-let find_index (pred: 'a -> bool) (l: 'a list): int option =
-    find_index_inner pred l 0
 
 let strlen = String.length 
 let strsub = String.sub
@@ -70,19 +50,17 @@ let chain_fsm (startstate: state) ((c, s): rule) (firstchar: int): fsm =
         accept = (fun s2 -> if s2 = startstate + numstates - 1 then Some c else None);
         tfun = chain_tfun startstate s firstchar
     }
-
-
-let rec longest_overlap_inner (suf: string) (pref: string) (check: int) (acc: int): int
-    = if check > min (strlen suf) (strlen pref)
-        then acc
-        else longest_overlap_inner suf pref (check + 1) ( (* todo check if this counts as tail recursive *)
-            if strsub pref 0 check = strsub suf (strlen suf - check) check
-                then check
-                else acc
-        )
     
 let longest_overlap (suf: string) (pref: string): int = 
-    longest_overlap_inner suf pref 1 0
+    let rec longest_overlap_inner (check: int) (acc: int): int = 
+        if check > min (strlen suf) (strlen pref)
+            then acc
+            else longest_overlap_inner (check + 1) ( (* todo check if this counts as tail recursive *)
+                if strsub pref 0 check = strsub suf (strlen suf - check) check
+                    then check
+                    else acc
+            )
+    in longest_overlap_inner 1 0
 
 exception NPE
 let checked_access: 'a option -> 'a = function
@@ -93,14 +71,14 @@ let checked_access: 'a option -> 'a = function
     returns the last state that the string goes to,
     and the index of the first character leaving the fsm if it exists, else one past the end
 *)
-let rec follow_str_inner (mach: fsm) (str: string) (ind: int) (st: state): state * int =
-    if ind = strlen str then (st, ind)
-    else match mach.tfun st str.[ind] with
-     | None -> (st, ind)
-     | Some nextstate -> follow_str_inner mach str (ind + 1) nextstate
 
 let follow_str (mach: fsm) (str: string): state * int =
-    follow_str_inner mach str 0 mach.startstate 
+    let rec follow_str_inner (ind: int) (st: state): state * int =
+        if ind = strlen str then (st, ind)
+        else match mach.tfun st str.[ind] with
+         | None -> (st, ind)
+         | Some nextstate -> follow_str_inner (ind + 1) nextstate
+    in follow_str_inner 0 mach.startstate 
 
 (* todo use accumulator *)
 (* 
@@ -167,18 +145,17 @@ let rec combine_fns (fns: ('a -> 'b -> 'c option) list): 'a -> 'b -> 'c option =
         | Some thing -> Some thing;
         | None -> (combine_fns t) x y
     )
-
-let rec make_fsm_add_chrs (trie: fsm) (str: string) (strs: string list) (cstate: state) (index: int): tfun_t list =
-    (fun si ci -> 
-        if si == cstate
-            then Some (failurefun trie (appendchar (strsub str 0 index)  ci) strs)
-            else None
-    ) :: if index < strlen str 
-            then make_fsm_add_chrs trie str strs (checked_access (trie.tfun cstate str.[index])) (index + 1)
-            else []
     
 let make_fsm_add_str (trie: fsm) (strs: string list) (str: string): tfun_t = 
-    combine_fns (make_fsm_add_chrs trie str strs trie.startstate 0)
+    let rec make_fsm_add_chrs (cstate: state) (index: int): tfun_t list =
+        (fun si ci -> 
+            if si == cstate
+                then Some (failurefun trie (appendchar (strsub str 0 index)  ci) strs)
+                else None
+        ) :: if index < strlen str 
+                then make_fsm_add_chrs (checked_access (trie.tfun cstate str.[index])) (index + 1)
+                else []
+    in combine_fns (make_fsm_add_chrs trie.startstate 0)
 
 let make_fsm (rules: rule list): fsm =
     let rules = List.sort (* very important! makes the use of failurefun acceptable *)
@@ -207,14 +184,14 @@ let flatten_fsm (mach: fsm): total_fsm =
         tfun = fun s c -> table.(s).(Char.code c)
     }
 
-let rec fsm_accepts_inner (mach: fsm) (input: string) (cstate: state) (index: int): char option =
-    if index = strlen input then mach.accept cstate
-    else match mach.tfun cstate input.[index] with
-    | Some ns -> fsm_accepts_inner mach input ns (index + 1);
-    | None -> None
-
+(* acceptance stuff *)
 let fsm_accepts (mach: fsm) (input: string): char option =
-    fsm_accepts_inner mach input 0 0
+    let rec fsm_accepts_inner (cstate: state) (index: int): char option =
+        if index = strlen input then mach.accept cstate
+        else match mach.tfun cstate input.[index] with
+        | Some ns -> fsm_accepts_inner ns (index + 1);
+        | None -> None
+    in fsm_accepts_inner 0 0
 
 let total_fsm_accepts (mach: total_fsm) (input: string): char option =
     let rec tfsm_accepts_inner (s: state) (index: int): char option =
@@ -222,6 +199,3 @@ let total_fsm_accepts (mach: total_fsm) (input: string): char option =
             then mach.accept s
             else tfsm_accepts_inner (mach.tfun s input.[index]) (index + 1)
     in tfsm_accepts_inner mach.startstate 0
-
-
-
