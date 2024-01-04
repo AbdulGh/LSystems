@@ -31,11 +31,20 @@ let chars = List.init 256 Char.chr
 type rule = char * string
 type state = int
 type tfun_t = state -> char -> state option 
+type total_tfun_t = state -> char -> state
+
 type fsm = {
     startstate: state;
     numstates: int;
     accept: state -> char option;
     tfun : tfun_t
+}
+
+type total_fsm = {
+    startstate: state;
+    numstates: int;
+    accept: state -> char option;
+    tfun : total_tfun_t
 }
 
 (*
@@ -188,6 +197,16 @@ let make_fsm (rules: rule list): fsm =
                 )
             }
 
+(*step 3: flatten the 'decision tree' in the tfun which should now be total*)
+let flatten_fsm (mach: fsm): total_fsm =
+    let init_row (s: state) = Array.init 256 (fun ccode -> checked_access (mach.tfun s (Char.chr ccode))) in
+    let table = Array.init mach.numstates init_row in {
+        startstate = mach.startstate;
+        numstates = mach.numstates;
+        accept = mach.accept;
+        tfun = fun s c -> table.(s).(Char.code c)
+    }
+
 let rec fsm_accepts_inner (mach: fsm) (input: string) (cstate: state) (index: int): char option =
     if index = strlen input then mach.accept cstate
     else match mach.tfun cstate input.[index] with
@@ -196,3 +215,13 @@ let rec fsm_accepts_inner (mach: fsm) (input: string) (cstate: state) (index: in
 
 let fsm_accepts (mach: fsm) (input: string): char option =
     fsm_accepts_inner mach input 0 0
+
+let total_fsm_accepts (mach: total_fsm) (input: string): char option =
+    let rec tfsm_accepts_inner (s: state) (index: int): char option =
+        if index = strlen input
+            then mach.accept s
+            else tfsm_accepts_inner (mach.tfun s input.[index]) (index + 1)
+    in tfsm_accepts_inner mach.startstate 0
+
+
+

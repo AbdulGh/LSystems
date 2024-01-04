@@ -131,47 +131,47 @@ let make_fsm_tests = "makefsm tests" >::: [
     )
 ]
 
-let ffut1 = flatten_fsm ffut1;
-let ffut2 = flatten_fsm ffut2;
-let ffut3 = flatten_fsm ffut3;
+let ffut1 = flatten_fsm fut1
+let ffut2 = flatten_fsm fut2
+let ffut3 = flatten_fsm fut3
 
-let flattem_fsm_test = "flatten_fsm tests" >::: [
+let flatten_fsm_test = "flatten_fsm tests" >::: [
     "ffut1 accepts aa" >:: (
-        fun _ -> (assert_equal (fsm_accepts ffut1 "aa") (Some 'b'))
+        fun _ -> (assert_equal (total_fsm_accepts ffut1 "aa") (Some 'b'))
     );
     "ffut1 accepts aaaa" >:: (
-        fun _ -> (assert_equal (fsm_accepts ffut1 "aaaa") (Some 'a'))
+        fun _ -> (assert_equal (total_fsm_accepts ffut1 "aaaa") (Some 'a'))
     );
     "ffut1 rejects some things that it should" >:: (
         fun _ -> (
-            (ae_co (fsm_accepts ffut1 "a") None);
-            (ae_co (fsm_accepts ffut1 "b") None);
-            (ae_co (fsm_accepts ffut1 "") None);
-            (ae_co (fsm_accepts ffut1 "hello, world") None);
+            (ae_co (total_fsm_accepts ffut1 "a") None);
+            (ae_co (total_fsm_accepts ffut1 "b") None);
+            (ae_co (total_fsm_accepts ffut1 "") None);
+            (ae_co (total_fsm_accepts ffut1 "hello, world") None);
         )
     );
     "ffut2 accepts ab" >:: (
-        fun _ -> (assert_equal (fsm_accepts ffut2 "ab") (Some 'a'))
+        fun _ -> (assert_equal (total_fsm_accepts ffut2 "ab") (Some 'a'))
     );
     "ffut2 accepts aaaaab" >:: (
-        fun _ -> (assert_equal (fsm_accepts ffut2 "aaaaab") (Some 'b'))
+        fun _ -> (assert_equal (total_fsm_accepts ffut2 "aaaaab") (Some 'b'))
     );
     "ffut2 accepts aaaab as a" >:: (
-        fun _ -> (assert_equal (fsm_accepts ffut2 "aaaab") (Some 'a'))
+        fun _ -> (assert_equal (total_fsm_accepts ffut2 "aaaab") (Some 'a'))
     );
     "ffut2 rejects some things that it should" >:: (
         fun _ -> (
-            (ae_co (fsm_accepts ffut2 "aaa") None);
-            (ae_co (fsm_accepts ffut2 "aaaaa") None);
-            (ae_co (fsm_accepts ffut2 "a") None);
-            (ae_co (fsm_accepts ffut2 "b") None);
-            (ae_co (fsm_accepts ffut2 "") None);
-            (ae_co (fsm_accepts ffut2 "hello, world") None);
+            (ae_co (total_fsm_accepts ffut2 "aaa") None);
+            (ae_co (total_fsm_accepts ffut2 "aaaaa") None);
+            (ae_co (total_fsm_accepts ffut2 "a") None);
+            (ae_co (total_fsm_accepts ffut2 "b") None);
+            (ae_co (total_fsm_accepts ffut2 "") None);
+            (ae_co (total_fsm_accepts ffut2 "hello, world") None);
         )
     );
     "ffut3 accepts aaba as a" >:: (
         fun _ -> assert_equal
-            (fsm_accepts ffut3 "aaba")
+            (total_fsm_accepts ffut3 "aaba")
             (Some 'a')
     )
 ]
@@ -179,3 +179,4 @@ let flattem_fsm_test = "flatten_fsm tests" >::: [
 let _ = run_test_tt_main basicfsm_tests
 let _ = run_test_tt_main failurefun_tests
 let _ = run_test_tt_main make_fsm_tests
+let _ = run_test_tt_main flatten_fsm_test
