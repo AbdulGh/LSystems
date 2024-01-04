@@ -71,10 +71,14 @@ let rec longest_overlap_inner (suf: string) (pref: string) (check: int) (acc: in
                 then check
                 else acc
         )
-
     
 let longest_overlap (suf: string) (pref: string): int = 
     longest_overlap_inner suf pref 1 0
+
+exception NPE
+let checked_access: 'a option -> 'a = function
+    | Some thing -> thing;
+    | None -> raise NPE 
 
 (*
     returns the last state that the string goes to,
@@ -102,19 +106,16 @@ let rec failurefun_prefix (str: string) (strs: string list): (string * int) =
         current = longest_overlap str h 
         and (ns, nl) as nextbest = failurefun_prefix str t
        in
-        if current > nl then (h, current) else nextbest
+        if current >= nl then (h, current) else nextbest
 
-let failurefun (mach: fsm) (prefix: string) (strs: string list): state = 
-    let (beststr, overlap) = failurefun_prefix prefix strs in snd (follow_str mach (strsub beststr 0 overlap))
-
+(*
+    gives, for each short string with last character leaving the fsm, the state reached by the longest prefix
+    of a rule rhs matching a suffix of that string
+*)
+let failurefun (mach: fsm) (failstr: string) (strs: string list): state = 
+    let (beststr, overlap) = failurefun_prefix failstr strs in fst (follow_str mach (strsub beststr 0 overlap))
+    
 (* step 1: just throw together a fsm *)
-(* todo find a better way of doing this, or check what it compiles to *)
-let with_start_state (input: fsm) (ss:state) :fsm = {
-    startstate = ss;
-    numstates = input.numstates;
-    accept = input.accept;
-    tfun = input.tfun
-}
 
 let rec basicfsm_inner (strs: rule list): fsm
     = match strs with
@@ -151,35 +152,41 @@ let basicfsm (strs: rule list): fsm =
 
 let rec combine_fns (fns: ('a -> 'b -> 'c option) list): 'a -> 'b -> 'c option =
     match fns with
-    | [] -> (fun _ _-> None);
+    | [] -> (fun _ _ -> None);
     | h :: t -> (
         fun x y -> match (h x y) with
         | Some thing -> Some thing;
         | None -> (combine_fns t) x y
     )
 
-let make_fsm_add_chrs (trie: fsm) (str: string) (strs: string list) (cstate: state) (index: int): tfun_t =
-    if index >= strlen str then (fun _ _ -> None)
-    else fun si ci -> match si, ci with
-    | cstate, c when c = str.[index] -> trie.tfun cstate c;
-    | cstate, c -> Some (failurefun trie (appendchar (strsub str 0 index)  c) strs);
-    | _, _ -> None
+let rec make_fsm_add_chrs (trie: fsm) (str: string) (strs: string list) (cstate: state) (index: int): tfun_t list =
+    (fun si ci -> 
+        if si == cstate
+            then Some (failurefun trie (appendchar (strsub str 0 index)  ci) strs)
+            else None
+    ) :: if index < strlen str 
+            then make_fsm_add_chrs trie str strs (checked_access (trie.tfun cstate str.[index])) (index + 1)
+            else []
     
 let make_fsm_add_str (trie: fsm) (strs: string list) (str: string): tfun_t = 
-    make_fsm_add_chrs trie str strs trie.startstate 0
+    combine_fns (make_fsm_add_chrs trie str strs trie.startstate 0)
 
 let make_fsm (rules: rule list): fsm =
-    let trie = basicfsm rules and strs = (map snd rules) in
-        let combinedfun = combine_fns (map (make_fsm_add_str trie strs) strs) in {
-            startstate = 0;
-            numstates = trie.numstates;
-            accept = trie.accept;
-            tfun = (
-                fun s c -> match trie.tfun s c with
-                 | Some state -> Some state;
-                 | None -> combinedfun s c
-            )
-        }
+    let rules = List.sort (* very important! makes the use of failurefun acceptable *)
+        (fun (_, s1) (_, s2) -> compare (strlen s1) (strlen s2))
+        rules
+    in
+        let trie = basicfsm rules and strs = (map snd rules) in
+            let combinedfun = combine_fns (map (make_fsm_add_str trie strs) strs) in {
+                startstate = 0;
+                numstates = trie.numstates;
+                accept = trie.accept;
+                tfun = (
+                    fun s c -> match trie.tfun s c with
+                     | Some state -> Some state;
+                     | None -> combinedfun s c
+                )
+            }
 
 let rec fsm_accepts_inner (mach: fsm) (input: string) (cstate: state) (index: int): char option =
     if index = strlen input then mach.accept cstate
